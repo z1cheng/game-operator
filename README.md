@@ -1,5 +1,10 @@
 # game-operator
-// TODO(user): Add simple overview of use/purpose
+
+2048, but running as a Kubernetes Operator.
+
+Can you win the game?
+
+![Game](./images/game.png)
 
 ## Description
 // TODO(user): An in-depth paragraph about your project and overview of use
