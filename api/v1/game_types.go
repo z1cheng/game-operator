@@ -35,9 +35,6 @@ type GameSpec struct {
 	// Docker image name
 	// +optional
 	Image string `json:"image,omitempty"`
-
-	// Ingress Host name
-	Host string `json:"host,omitempty"`
 }
 
 const (
@@ -66,7 +63,6 @@ type GameStatus struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.labelSelector
 //+kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="The phase of game."
-//+kubebuilder:printcolumn:name="Host",type="string",JSONPath=".spec.host",description="The host address."
 //+kubebuilder:printcolumn:name="DESIRED",type="integer",JSONPath=".spec.replicas",description="The desired number of pods."
 //+kubebuilder:printcolumn:name="CURRENT",type="integer",JSONPath=".status.replicas",description="The number of currently all pods."
 //+kubebuilder:printcolumn:name="READY",type="integer",JSONPath=".status.readyReplicas",description="The number of pods ready."

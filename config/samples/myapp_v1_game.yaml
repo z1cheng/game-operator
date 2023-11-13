@@ -3,6 +3,5 @@ kind: Game
 metadata:
   name: game-sample
 spec:
-  replicas: 1
+  replicas: 2
   image: alexwhen/docker-2048
-  host: mygame.io

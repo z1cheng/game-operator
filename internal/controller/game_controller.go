@@ -22,7 +22,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,7 +54,6 @@ type GameReconciler struct {
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -105,8 +103,8 @@ func (r *GameReconciler) syncGame(ctx context.Context, obj *myappv1.Game) error 
 			APIVersion:         game.APIVersion,
 			Kind:               game.Kind,
 			Name:               game.Name,
-			Controller:         pointer.BoolPtr(true),
-			BlockOwnerDeletion: pointer.BoolPtr(true),
+			Controller:         pointer.Bool(true),
+			BlockOwnerDeletion: pointer.Bool(true),
 			UID:                game.UID,
 		},
 	}
@@ -156,10 +154,11 @@ func (r *GameReconciler) syncGame(ctx context.Context, obj *myappv1.Game) error 
 		svc = &corev1.Service{
 			ObjectMeta: meta,
 			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeNodePort,
 				Ports: []corev1.ServicePort{
 					{
 						Port:       int32(port),
-						TargetPort: intstr.FromInt(port),
+						TargetPort: intstr.FromInt32(port),
 						Protocol:   corev1.ProtocolTCP,
 					},
 				},
@@ -170,21 +169,6 @@ func (r *GameReconciler) syncGame(ctx context.Context, obj *myappv1.Game) error 
 			return err
 		}
 		logger.Info("create service success", "name", name.String())
-	}
-
-	ing := &networkingv1.Ingress{}
-	if err := r.Get(ctx, name, ing); err != nil {
-		if !errors.IsNotFound(err) {
-			return err
-		}
-		ing = &networkingv1.Ingress{
-			ObjectMeta: meta,
-			Spec:       getIngressSpec(game, labels),
-		}
-		if err := r.Create(ctx, ing); err != nil {
-			return err
-		}
-		logger.Info("create ingress success", "name", name.String())
 	}
 
 	newStatus := myappv1.GameStatus{
@@ -254,35 +238,6 @@ func getSpecFromDeployment(deploy *appsv1.Deployment) appsv1.DeploymentSpec {
 					{
 						Name:  container.Name,
 						Image: container.Image,
-					},
-				},
-			},
-		},
-	}
-}
-
-func getIngressSpec(game *myappv1.Game, labels map[string]string) networkingv1.IngressSpec {
-	pathType := networkingv1.PathTypePrefix
-	return networkingv1.IngressSpec{
-		Rules: []networkingv1.IngressRule{
-			{
-				Host: game.Spec.Host,
-				IngressRuleValue: networkingv1.IngressRuleValue{
-					HTTP: &networkingv1.HTTPIngressRuleValue{
-						Paths: []networkingv1.HTTPIngressPath{
-							{
-								PathType: &pathType,
-								Path:     "/",
-								Backend: networkingv1.IngressBackend{
-									Service: &networkingv1.IngressServiceBackend{
-										Name: game.Name,
-										Port: networkingv1.ServiceBackendPort{
-											Number: int32(port),
-										},
-									},
-								},
-							},
-						},
 					},
 				},
 			},
